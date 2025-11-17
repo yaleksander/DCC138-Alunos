@@ -3,10 +3,32 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-var camera, scene, renderer, spotTarget, dirTarget, rot, box, controls;
+var camera, scene, renderer, spotTarget, dirTarget, rot, mesh, controls;
 
 init();
+
+function fixChildren(mesh, material)
+{
+	if (mesh.isMesh)
+	{
+		mesh.geometry.computeTangents();
+		mesh.material = material;
+		/*
+		const shaderMaterial = new THREE.ShaderMaterial();
+		shaderMaterial.vertexShader = material.vertexShader;
+		shaderMaterial.fragmentShader = material.fragmentShader;
+		for(var k in mesh.material)
+			shaderMaterial[k] = mesh.material[k];
+		//for(var k in material)
+		//	shaderMaterial[k] = material[k];
+		mesh.material = shaderMaterial;
+		*/
+	}
+	for (var i = 0; i < mesh.children.length; i++)
+		fixChildren(mesh.children[i], material);
+}
 
 async function init()
 {
@@ -18,6 +40,11 @@ async function init()
 	scene = new THREE.Scene();
 	scene.add(camera);
 	scene.add(new THREE.AmbientLight(0x777777));
+
+	const gltfLoader = new GLTFLoader();
+	const gltf = await gltfLoader.loadAsync("assets/scooby_doo.glb");
+	mesh = gltf.scene;
+	scene.add(mesh);
 
 	const textureLoader = new THREE.TextureLoader();
 	const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -50,17 +77,22 @@ async function init()
 		lights: true
 	});
 
+	console.log(THREE.ShaderLib['standard'].vertexShader);
+	fixChildren(mesh, material);
+
 	rot = 0;
 	dirTarget = new THREE.Object3D();
 	spotTarget = new THREE.Object3D();
 	scene.add(dirTarget);
 	scene.add(spotTarget);
 
+	/*
 	const s = 3;
 	box = new THREE.Mesh(geometry, material.clone());
 	box.position.set(0, 0.5, 0);
 	box.castShadow = true;
 	scene.add(box);
+	*/
 
 	const planeGeo = new THREE.PlaneGeometry(10, 10);
 	const planeMat = material.clone();

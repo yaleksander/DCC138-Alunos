@@ -141,4 +141,5 @@ void main()
 
 	shadow = 1.0;//getShadowMask();
 	gl_FragColor = (useTexture ? texture2D(myTexture, vUV) : vec4(noTexColor, 1.0)) * vec4(ambient + phong * shadow, 1.0);
+	gl_FragColor = vec4(1.0 - gl_FragColor.r, 1.0 - gl_FragColor.g, 1.0 - gl_FragColor.b, gl_FragColor.a);
 }
