@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-var camera, scene, renderer, spotTarget, dirTarget, rot, mesh, controls;
+var camera, scene, renderer, spotTarget, dirTarget, mesh, controls;
 
 init();
 
@@ -14,17 +14,18 @@ function fixChildren(mesh, material)
 	if (mesh.isMesh)
 	{
 		mesh.geometry.computeTangents();
-		mesh.material = material;
-		/*
-		const shaderMaterial = new THREE.ShaderMaterial();
-		shaderMaterial.vertexShader = material.vertexShader;
-		shaderMaterial.fragmentShader = material.fragmentShader;
+		mesh.castShadow = mesh.receiveShadow = true;
+		const map = mesh.material.map;
+		const shaderMaterial = material.clone();
+		const uniforms = THREE.UniformsUtils.merge([material.uniforms, mesh.material.uniforms ? mesh.material.uniforms : THREE.ShaderLib["standard"].uniforms]);
+		if (!uniforms.normalMap.value)
+			uniforms.useNormalMap.value = false;
 		for(var k in mesh.material)
-			shaderMaterial[k] = mesh.material[k];
-		//for(var k in material)
-		//	shaderMaterial[k] = material[k];
+			if (k != "uniforms" && k != "type" && k != "uuid" && k != "vertexShader" && k != "fragmentShader")
+				shaderMaterial[k] = mesh.material[k];
 		mesh.material = shaderMaterial;
-		*/
+		mesh.material.uniforms = uniforms;
+		mesh.material.map = map;
 	}
 	for (var i = 0; i < mesh.children.length; i++)
 		fixChildren(mesh.children[i], material);
@@ -39,7 +40,7 @@ async function init()
 	camera.position.set(0, 2, 2);
 	scene = new THREE.Scene();
 	scene.add(camera);
-	scene.add(new THREE.AmbientLight(0x777777));
+	scene.add(new THREE.AmbientLight(0xcccccc));
 
 	const gltfLoader = new GLTFLoader();
 	const gltf = await gltfLoader.loadAsync("assets/scooby_doo.glb");
@@ -47,12 +48,14 @@ async function init()
 	scene.add(mesh);
 
 	const textureLoader = new THREE.TextureLoader();
+	const texture = textureLoader.load("assets/goose.png");
 	const geometry = new THREE.BoxGeometry(1, 1, 1);
 	geometry.computeTangents();
 	const material = new THREE.ShaderMaterial(
 	{
 		uniforms: THREE.UniformsUtils.merge(
 		[
+			THREE.UniformsLib["common"],
 			THREE.UniformsLib["lights"],
 			{
 				cameraPos: { value: camera.position },
@@ -66,8 +69,9 @@ async function init()
 				{
 					value:
 					{
-						specular: new THREE.Vector3(0.75, 0.75, 0.75),
-						shininess: 16
+						diffuseColor: new THREE.Vector3(0.75, 0.75, 0.75),
+						specularColor: new THREE.Vector3(0.75, 0.75, 0.75),
+						shininess: 32
 					}
 				}
 			}
@@ -77,22 +81,12 @@ async function init()
 		lights: true
 	});
 
-	console.log(THREE.ShaderLib['standard'].vertexShader);
 	fixChildren(mesh, material);
 
-	rot = 0;
 	dirTarget = new THREE.Object3D();
 	spotTarget = new THREE.Object3D();
 	scene.add(dirTarget);
 	scene.add(spotTarget);
-
-	/*
-	const s = 3;
-	box = new THREE.Mesh(geometry, material.clone());
-	box.position.set(0, 0.5, 0);
-	box.castShadow = true;
-	scene.add(box);
-	*/
 
 	const planeGeo = new THREE.PlaneGeometry(10, 10);
 	const planeMat = material.clone();
@@ -128,6 +122,7 @@ async function init()
 	pointLight2.position.set(3, 2, 0);
 	pointLight2.castShadow = true;
 	scene.add(pointLight2);
+	pointLight1.shadow.bias = pointLight2.shadow.bias = 0.00005;
 
 	const spotLight = new THREE.SpotLight(0xffffff, 4.0);
 	spotLight.target = spotTarget;
@@ -146,7 +141,6 @@ async function init()
 
 	controls = new OrbitControls(camera, renderer.domElement);
 	controls.maxPolarAngle = Infinity;
-	controls.enablePan = false;
 
 	window.addEventListener("resize", onWindowResize);
 }

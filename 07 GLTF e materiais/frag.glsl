@@ -1,14 +1,18 @@
 #include <common>
 #include <packing>
+#include <uv_pars_fragment>
+#include <fog_pars_fragment>
 #include <lights_pars_begin>
 #include <shadowmap_pars_fragment>
 
 struct Material
 {
-	vec3 specular;
+	vec3 diffuseColor;
+	vec3 specularColor;
 	float shininess;
 };
 
+uniform sampler2D map;
 uniform sampler2D myTexture;
 uniform sampler2D normalMap;
 uniform vec3 cameraPos;
@@ -56,7 +60,7 @@ void main()
 			#endif
 
 			// phong
-			phong += (diff + material.specular * spec) * directionalLights[0].color * shadow;
+			phong += (diff * material.diffuseColor + spec * material.specularColor) * directionalLights[0].color * shadow;
 		}
 		#pragma unroll_loop_end
 
@@ -72,7 +76,8 @@ void main()
 
 			// diffuse
 			lightDir = normalize(pointLights[i].position - fragPos);
-			diff = max(0.0, dot(normal, lightDir));
+			//diff = max(0.0, dot(normal, lightDir));
+			diff = min(1.0, max(0.0, dot(normal, lightDir)));
 
 			// specular
 			viewDir = normalize(cameraPos - fragPos);
@@ -95,7 +100,7 @@ void main()
 			#endif
 
 			// phong
-			phong += (diff + material.specular * spec) * pointLights[i].color * att * shadow;
+			phong += (diff * material.diffuseColor + spec * material.specularColor) * pointLights[i].color * att * shadow;
 		}
 		#pragma unroll_loop_end
 
@@ -133,13 +138,13 @@ void main()
 			#endif
 
 			// phong
-			phong += (diff + material.specular * spec) * spotLights[0].color * att * shadow;
+			phong += (diff * material.diffuseColor + spec * material.specularColor) * spotLights[0].color * att * shadow;
 		}
 		#pragma unroll_loop_end
 
 	#endif
 
-	shadow = 1.0;//getShadowMask();
-	gl_FragColor = (useTexture ? texture2D(myTexture, vUV) : vec4(noTexColor, 1.0)) * vec4(ambient + phong * shadow, 1.0);
-	gl_FragColor = vec4(1.0 - gl_FragColor.r, 1.0 - gl_FragColor.g, 1.0 - gl_FragColor.b, gl_FragColor.a);
+	gl_FragColor = (useTexture ? texture2D(map, vUV) : vec4(noTexColor, 1.0)) * vec4(ambient + phong, 1.0);
+
+	#include <fog_fragment>
 }
