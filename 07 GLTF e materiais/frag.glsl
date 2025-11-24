@@ -22,15 +22,15 @@ uniform vec3 noTexColor;
 uniform Material material;
 
 varying vec2 vUV;
+varying vec3 vNormal;
 varying vec3 fragPos;
-varying mat3 TBN;
 
 void main()
 {
 	vec3 ambient = ambientLightColor, phong = vec3(0.0);
-	vec3 lightDir, viewDir, reflectDir;	
+	vec3 lightDir, reflectDir, viewDir = normalize(cameraPos - fragPos);
 	float diff, spec, dist, att, shadow;
-	vec3 normal = useNormalMap ? normalize(TBN * (texture2D(normalMap, vUV).rgb * 2.0 - 1.0)) : normalize(TBN * vec3(0.0, 0.0, 1.0));
+	vec3 normal = vNormal;
 
 	#if NUM_DIR_LIGHTS > 0
 
@@ -38,11 +38,10 @@ void main()
 		for (int i = 0; i < NUM_DIR_LIGHTS; i++)
 		{
 			// diffuse
-			lightDir = normalize(directionalLights[0].direction);
+			lightDir = normalize(directionalLights[i].direction);
 			diff = max(0.0, dot(normal, lightDir));
 
 			// specular
-			viewDir = normalize(cameraPos - fragPos);
 			reflectDir = reflect(-lightDir, normal);
 			spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 
@@ -60,7 +59,7 @@ void main()
 			#endif
 
 			// phong
-			phong += (diff * material.diffuseColor + spec * material.specularColor) * directionalLights[0].color * shadow;
+			phong += (diff * material.diffuseColor + spec * material.specularColor) * directionalLights[i].color * shadow;
 		}
 		#pragma unroll_loop_end
 
@@ -72,15 +71,13 @@ void main()
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 		{
 			dist = length(pointLights[i].position - fragPos);
-			att = getDistanceAttenuation(dist, pointLights[i].distance, pointLights[0].decay);
+			att = getDistanceAttenuation(dist, pointLights[i].distance, pointLights[i].decay);
 
 			// diffuse
 			lightDir = normalize(pointLights[i].position - fragPos);
-			//diff = max(0.0, dot(normal, lightDir));
-			diff = min(1.0, max(0.0, dot(normal, lightDir)));
+			diff = max(0.0, dot(normal, lightDir));
 
 			// specular
-			viewDir = normalize(cameraPos - fragPos);
 			reflectDir = reflect(-lightDir, normal);
 			spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 
@@ -111,16 +108,15 @@ void main()
 		#pragma unroll_loop_start
 		for (int i = 0; i < NUM_SPOT_LIGHTS; i++)
 		{
-			dist = length(spotLights[0].position - fragPos);
-			lightDir = normalize(spotLights[0].position - fragPos);
-			att = getDistanceAttenuation(dist, spotLights[0].distance, spotLights[0].decay);
-			att *= getSpotAttenuation(spotLights[0].coneCos, spotLights[0].penumbraCos, dot(lightDir, spotLights[0].direction));
+			dist = length(spotLights[i].position - fragPos);
+			lightDir = normalize(spotLights[i].position - fragPos);
+			att = getDistanceAttenuation(dist, spotLights[i].distance, spotLights[i].decay);
+			att *= getSpotAttenuation(spotLights[i].coneCos, spotLights[i].penumbraCos, dot(lightDir, spotLights[i].direction));
 
 			// diffuse
 			diff = max(0.0, dot(normal, lightDir));
 
 			// specular
-			viewDir = normalize(cameraPos - fragPos);
 			reflectDir = reflect(-lightDir, normal);
 			spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 
@@ -138,7 +134,7 @@ void main()
 			#endif
 
 			// phong
-			phong += (diff * material.diffuseColor + spec * material.specularColor) * spotLights[0].color * att * shadow;
+			phong += (diff * material.diffuseColor + spec * material.specularColor) * spotLights[i].color * att * shadow;
 		}
 		#pragma unroll_loop_end
 

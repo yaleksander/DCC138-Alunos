@@ -9,7 +9,7 @@ var camera, scene, renderer, spotTarget, dirTarget, mesh, controls;
 
 init();
 
-function fixChildren(mesh, material)
+function setMeshMaterial(mesh, material)
 {
 	if (mesh.isMesh)
 	{
@@ -25,10 +25,11 @@ function fixChildren(mesh, material)
 				shaderMaterial[k] = mesh.material[k];
 		mesh.material = shaderMaterial;
 		mesh.material.uniforms = uniforms;
+		mesh.material.uniforms.material.value.specularColor = new THREE.Vector3(0, 0, 0);
 		mesh.material.map = map;
 	}
 	for (var i = 0; i < mesh.children.length; i++)
-		fixChildren(mesh.children[i], material);
+		setMeshMaterial(mesh.children[i], material);
 }
 
 async function init()
@@ -37,10 +38,10 @@ async function init()
 	const frag = await (await fetch("frag.glsl")).text();
 
 	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-	camera.position.set(0, 2, 2);
+	camera.position.set(0, 3, 3);
 	scene = new THREE.Scene();
 	scene.add(camera);
-	scene.add(new THREE.AmbientLight(0xcccccc));
+	scene.add(new THREE.AmbientLight(0xaaaaaa));
 
 	const gltfLoader = new GLTFLoader();
 	const gltf = await gltfLoader.loadAsync("assets/scooby_doo.glb");
@@ -81,7 +82,7 @@ async function init()
 		lights: true
 	});
 
-	fixChildren(mesh, material);
+	setMeshMaterial(mesh, material);
 
 	dirTarget = new THREE.Object3D();
 	spotTarget = new THREE.Object3D();
@@ -98,8 +99,8 @@ async function init()
 	floor.rotation.set(-Math.PI / 2, 0, 0);
 	scene.add(floor);
 
-	const dirLight = new THREE.DirectionalLight(0xffffff, 0.25);
-	dirLight.position.set(-5, 5, -5);
+	const dirLight = new THREE.DirectionalLight(0xffffff, 0.75);
+	dirLight.position.set(15, 15, 15);
 	dirLight.target = dirTarget;
 	dirLight.castShadow = true;
 	const d = 10;
@@ -108,12 +109,12 @@ async function init()
 	dirLight.shadow.camera.top = d;
 	dirLight.shadow.camera.bottom = -d;
 	dirLight.shadow.camera.far = d * 2;
-	dirLight.shadow.bias = 0.02;
+	//dirLight.shadow.bias = 0.0002;
 	dirLight.shadow.mapSize = new THREE.Vector2(4096, 4096);
 	scene.add(dirLight);
     const cameraHelper = new THREE.CameraHelper(dirLight.shadow.camera);
     scene.add(cameraHelper);
-
+/*
 	const pointLight1 = new THREE.PointLight(0xffffff, 3.0);
 	pointLight1.position.set(-3, 2, 0);
 	pointLight1.castShadow = true;
@@ -130,7 +131,7 @@ async function init()
 	spotLight.penumbra = 0.15;
 	spotLight.castShadow = true;
 	scene.add(spotLight);
-
+*/
 	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setClearColor(0xffffff, 1);
 	renderer.setPixelRatio(window.devicePixelRatio);
