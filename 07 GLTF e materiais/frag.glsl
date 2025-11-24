@@ -15,7 +15,6 @@ struct Material
 uniform sampler2D map;
 uniform sampler2D myTexture;
 uniform sampler2D normalMap;
-uniform vec3 cameraPos;
 uniform bool useTexture;
 uniform bool useNormalMap;
 uniform vec3 noTexColor;
@@ -23,12 +22,13 @@ uniform Material material;
 
 varying vec2 vUV;
 varying vec3 vNormal;
+varying vec3 viewDir;
 varying vec3 fragPos;
 
 void main()
 {
 	vec3 ambient = ambientLightColor, phong = vec3(0.0);
-	vec3 lightDir, reflectDir, viewDir = normalize(cameraPos - fragPos);
+	vec3 lightDir, reflectDir;
 	float diff, spec, dist, att, shadow;
 	vec3 normal = vNormal;
 

@@ -9,12 +9,14 @@
 
 attribute vec4 tangent;
 
+uniform vec3 cameraPos;
+
+varying vec3 viewDir;
 varying vec3 fragPos;
 varying vec2 vUV;
 
 void main()
 {
-	//mat3 normalMatrix = mat3(transpose(inverse(modelViewMatrix)));
 	#include <uv_vertex>
 	#include <morphinstance_vertex>
 	#include <morphcolor_vertex>
@@ -35,4 +37,5 @@ void main()
 
 	vUV = uv;
 	fragPos = vec3(modelViewMatrix * vec4(position, 1.0));
+	viewDir = normalize(cameraPos - fragPos);
 }

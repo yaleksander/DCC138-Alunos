@@ -1,5 +1,4 @@
-// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-// https://github.com/mrdoob/three.js/tree/master/src/renderers/shaders/ShaderChunk
+// https://www.maya-ndljk.com/blog/threejs-basic-toon-shader
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
